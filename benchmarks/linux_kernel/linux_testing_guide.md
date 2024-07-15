@@ -5,8 +5,7 @@ kernel; and run `vast-front` on each of its compilation units.
 
 ## Foreword
 
-These instructions were tested and written on an `XPS 13 9310` machine running
-`Ubuntu 22.04.4 LTS x86_64`.
+These instructions were tested and written on `Ubuntu 22.04.4 LTS x86_64`.
 
 ## Prerequisites
 
