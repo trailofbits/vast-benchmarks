@@ -263,7 +263,7 @@ def main() -> int:
         print_commands=arguments.print_commands,
     )
 
-    print_tsv_row(["Total successful", f"{num_passing}/{len(compile_commands)}"])
+    print(f"Total successful: {num_passing}/{len(compile_commands)}", file=sys.stderr)
 
     return 0
 
