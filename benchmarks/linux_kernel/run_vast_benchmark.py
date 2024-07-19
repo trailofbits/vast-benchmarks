@@ -17,7 +17,7 @@ class Arguments(argparse.Namespace):
 
     vast_path: pathlib.Path
     compile_commands_file: pathlib.Path
-    output_directory: pathlib.Path
+    output_directory: Optional[pathlib.Path]
     print_commands: bool
     num_processes: int
     vast_option: list[str]
@@ -44,11 +44,13 @@ stderr.""".lstrip()
         type=pathlib.Path,
         help="Path to the Clang compilation database for the benchmark.",
     )
-    parser.add_argument(
-        "output_directory", type=pathlib.Path, help="Directory to place results."
-    )
 
     # Optional arguments.
+    parser.add_argument(
+        "--output_directory",
+        type=pathlib.Path,
+        help="Directory to place results. If omitted, then results will be discarded.",
+    )
 
     print_commands_help = """Enable this option to print the vast-front
 commands that are run on each compilation unit. Turned off by
@@ -123,7 +125,7 @@ class VASTBenchmarkInput:
     vast_path: pathlib.Path
     vast_option: list[str]
     compile_command: CompileCommand
-    output_directory: pathlib.Path
+    output_directory: Optional[pathlib.Path]
     print_commands: bool
 
 
@@ -152,14 +154,18 @@ def run_vast_on_compile_command(
     input_filepath = pathlib.PurePath(os.path.abspath(compile_command.file))
     input_mlir_name = input_filepath.with_suffix(".mlir").name
     input_log_name = input_filepath.with_suffix(".log").name
-    output_filepath = output_directory / input_mlir_name
-    log_filepath = output_directory / input_log_name
-    while output_filepath.is_file():
-        output_name = output_filepath.name
-        output_filepath = output_filepath.with_name(output_name + "_")
-    while log_filepath.is_file():
-        log_name = log_filepath.name
-        log_filepath = log_filepath.with_name(log_name + "_")
+
+    output_filepath = pathlib.Path()
+    log_filepath = pathlib.Path()
+    if output_directory is not None:
+        output_filepath = output_directory / input_mlir_name
+        log_filepath = output_directory / input_log_name
+        while output_filepath.is_file():
+            output_name = output_filepath.name
+            output_filepath = output_filepath.with_name(output_name + "_")
+        while log_filepath.is_file():
+            log_name = log_filepath.name
+            log_filepath = log_filepath.with_name(log_name + "_")
 
     original_arguments: list[str] = compile_command.argument_parts()
 
@@ -181,7 +187,7 @@ def run_vast_on_compile_command(
         + escaped_arguments[1:-3]
         + ["-w", "-Wno-error", "-Wno-everything"]
         + [str(input_filepath)]
-        + ["-o", str(output_filepath)]
+        + ["-o", str(output_filepath) if output_directory is not None else "/dev/null"]
     )
 
     if print_commands:
@@ -192,7 +198,7 @@ def run_vast_on_compile_command(
     elapsed = datetime.now() - begin
     failed = 0 != cp.returncode
 
-    if failed:
+    if failed and output_directory is not None:
         with open(log_filepath, "wb") as logfile:
             logfile.write(cp.stderr)
 
@@ -207,7 +213,7 @@ def run_vast_on_compile_commands(
     vast_path: pathlib.Path,
     vast_option: list[str],
     compile_commands: list[CompileCommand],
-    output_directory: pathlib.Path,
+    output_directory: Optional[pathlib.Path],
     num_processes: int,
     print_commands=False,
 ) -> int:
@@ -218,7 +224,8 @@ def run_vast_on_compile_commands(
     tsv_header = ["Compilation unit", "Runtime or failure"]
     num_passing = 0
 
-    output_directory.mkdir(parents=True, exist_ok=True)
+    if output_directory is not None:
+        output_directory.mkdir(parents=True, exist_ok=True)
     print_tsv_row(tsv_header)
     vast_benchmark_inputs = [
         VASTBenchmarkInput(
@@ -251,8 +258,13 @@ def run_vast_on_compile_commands(
 
 def main() -> int:
     arguments = parse_arguments()
-    compile_commands = load_compile_commands(arguments.compile_commands_file)
-    output_directory = arguments.output_directory.absolute()
+
+    compile_commands_file = arguments.compile_commands_file.absolute()
+    compile_commands = load_compile_commands(compile_commands_file)
+
+    output_directory = arguments.output_directory
+    if output_directory is not None:
+        output_directory = output_directory.absolute()
 
     num_passing = run_vast_on_compile_commands(
         vast_path=pathlib.Path(arguments.vast_path),
