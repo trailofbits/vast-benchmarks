@@ -21,6 +21,7 @@ class Arguments(argparse.Namespace):
     print_commands: bool
     num_processes: int
     vast_option: list[str]
+    print_errors: bool
 
 
 def parse_arguments() -> Arguments:
@@ -78,6 +79,16 @@ options.""".replace(
         "\n", " "
     )
     parser.add_argument("--vast_option", action="append", help=vast_option_help)
+    print_errors_help = """Enable this option to print any errors that occur
+when running vast-front on each compilation unit. Turned off by
+default.""".replace(
+        "\n", " "
+    )
+    parser.add_argument(
+        "--print_errors",
+        action=argparse.BooleanOptionalAction,
+        help=print_errors_help,
+    )
 
     arguments = Arguments()
     parser.parse_args(namespace=arguments)
@@ -131,11 +142,11 @@ class VASTBenchmarkInput:
 
 def run_vast_on_compile_command(
     vast_benchmark_input: VASTBenchmarkInput,
-) -> Optional[timedelta]:
+) -> timedelta | str:
     """
     Reuns vast on the given compilation unit with the given inputs. If
     successful, returns the time elapsed while lowering the compilation unit to
-    MLIR; otherwise returns None.
+    MLIR; otherwise returns a string containing the failure message.
     """
 
     # We have to pack the arguments into a dataclass like this since Pool.imap()
@@ -153,19 +164,13 @@ def run_vast_on_compile_command(
 
     input_filepath = pathlib.PurePath(os.path.abspath(compile_command.file))
     input_mlir_name = input_filepath.with_suffix(".mlir").name
-    input_log_name = input_filepath.with_suffix(".log").name
 
     output_filepath = pathlib.Path()
-    log_filepath = pathlib.Path()
     if output_directory is not None:
         output_filepath = output_directory / input_mlir_name
-        log_filepath = output_directory / input_log_name
         while output_filepath.is_file():
             output_name = output_filepath.name
             output_filepath = output_filepath.with_name(output_name + "_")
-        while log_filepath.is_file():
-            log_name = log_filepath.name
-            log_filepath = log_filepath.with_name(log_name + "_")
 
     original_arguments: list[str] = compile_command.argument_parts()
 
@@ -198,11 +203,10 @@ def run_vast_on_compile_command(
     elapsed = datetime.now() - begin
     failed = 0 != cp.returncode
 
-    if failed and output_directory is not None:
-        with open(log_filepath, "wb") as logfile:
-            logfile.write(cp.stderr)
+    if failed:
+        return cp.stderr.decode()
 
-    return None if failed else elapsed
+    return elapsed
 
 
 def print_tsv_row(row: list[str]):
@@ -215,7 +219,8 @@ def run_vast_on_compile_commands(
     compile_commands: list[CompileCommand],
     output_directory: Optional[pathlib.Path],
     num_processes: int,
-    print_commands=False,
+    print_commands: bool,
+    print_errors: bool,
 ) -> int:
     """
     Returns the number of compilation units vast-front successfully lowers to
@@ -239,19 +244,33 @@ def run_vast_on_compile_commands(
     ]
 
     with multiprocessing.Pool(num_processes) as pool:
-        for (i, elapsed), compile_command in zip(
+        for (i, elapsed_or_error), compile_command in zip(
             enumerate(pool.imap(run_vast_on_compile_command, vast_benchmark_inputs), 1),
             compile_commands,
         ):
-            num_passing += int(elapsed is not None)
-            failed = elapsed is None
+            filepath = compile_command.file
+            failed = isinstance(elapsed_or_error, str)
+            num_passing += int(not failed)
 
-            row = [compile_command.file, str(elapsed) if not failed else "FAIL"]
+            row = [filepath, str(elapsed_or_error) if not failed else "FAIL"]
             print_tsv_row(row)
 
-            prefix = "error" if failed else "finished"
-            msg = f"{prefix} processing {i}/{len(compile_commands)} files"
-            print(msg, file=sys.stderr)
+            fraction = f"{i}/{len(compile_commands)}"
+            if not failed:
+                print(f"finished processing {fraction} files", sys.stderr)
+            else:
+                print(f"error processing {fraction} files", sys.stderr)
+                if print_errors:
+                    print(elapsed_or_error, file=sys.stderr)
+                if output_directory is not None:
+                    input_filepath = pathlib.PurePath(os.path.abspath(filepath))
+                    input_log_name = input_filepath.with_suffix(".log").name
+                    log_filepath = output_directory / input_log_name
+                    while log_filepath.is_file():
+                        log_name = log_filepath.name
+                        log_filepath = log_filepath.with_name(log_name + "_")
+                    with open(log_filepath, "w") as fp:
+                        print(elapsed_or_error, file=fp)
 
     return num_passing
 
@@ -273,6 +292,7 @@ def main() -> int:
         output_directory=output_directory,
         num_processes=arguments.num_processes,
         print_commands=arguments.print_commands,
+        print_errors=arguments.print_errors,
     )
 
     print(f"Total successful: {num_passing}/{len(compile_commands)}", file=sys.stderr)
