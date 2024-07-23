@@ -18,10 +18,9 @@ from typing import Optional
 
 
 class Arguments(argparse.Namespace):
-    """
-    Program arguments"""
+    """Program arguments"""
 
-    input_filepath: pathlib.Path
+    column_filename_json: str
     output_filepath: Optional[pathlib.Path]
     field_separator: str
 
@@ -41,7 +40,11 @@ vast-front failed to process the file.
 The names of the files in the first column must match in all input files""".lstrip()
     )
 
-    parser.add_argument("input_filepath", type=pathlib.Path, help="Input filepath.")
+    parser.add_argument(
+        "column_filename_json",
+        type=str,
+        help="A JSON object mapping column names to the names of the files containing their data.",
+    )
     parser.add_argument(
         "--output_filepath",
         "-o",
