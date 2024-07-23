@@ -88,7 +88,8 @@ def main() -> int:
 
     markdown = dataframe.to_markdown(index=False)
     if markdown is None:
-        raise ValueError("error: could not convert input to markdown")
+        print("error: Could not convert input to Markdown", file=sys.stderr)
+        return 1
     if arguments.output_filepath is not None:
         with open(arguments.output_filepath, "w") as fp:
             fp.write(markdown)
