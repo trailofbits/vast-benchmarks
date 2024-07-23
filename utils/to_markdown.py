@@ -1,5 +1,12 @@
 """
-Converts a series of field-separated values to a markdown table.
+Combines field-separated-values files containing VAST runtime data into one
+Markdown table.
+
+Each file is expected to have two columns: "Compilation unit" and "Runtime or
+failure". The first column is the name of the file VAST was run on. The second
+column is either a floating point number representing how long it took
+vast-front, in seconds, to run on the file; or the string literal FAIL if
+vast-front failed to process the file.
 """
 
 import pathlib
@@ -19,7 +26,17 @@ class Arguments(argparse.Namespace):
 
 def parse_args() -> Arguments:
     parser = argparse.ArgumentParser(
-        description="Converts a series of field-separated values to a markdown table"
+        description="""
+Combines field-separated-values files containing VAST runtime data into one
+Markdown table.
+
+Each file is expected to have two columns: "Compilation unit" and "Runtime or
+failure". The first column is the name of the file VAST was run on. The second
+column is either a floating point number representing how long it took
+vast-front, in seconds, to run on the file; or the string literal FAIL if
+vast-front failed to process the file.
+
+The names of the files in the first column must match in all input files""".lstrip()
     )
 
     parser.add_argument("input_filepath", type=pathlib.Path, help="Input filepath.")
