@@ -80,13 +80,45 @@ def add_total_passing(dataframe: pandas.DataFrame) -> pandas.DataFrame:
 
 def main() -> int:
     arguments = parse_args()
-    dataframe = pandas.read_csv(arguments.input_filepath, sep=arguments.field_separator)
+    column_names_filenames = list(json.loads(arguments.column_filename_json).items())
+
+    if 0 == len(column_names_filenames):
+        print("error: No files to convert to Markdown", file=sys.stderr)
+        return 1
+
+    # Initialize the final dataframe with the data in the first table.
+
+    final_dataframe = pandas.read_csv(
+        column_names_filenames[0][1], sep=arguments.field_separator
+    )
+    final_dataframe = final_dataframe.rename(
+        columns={"Runtime or failure": column_names_filenames[0][0]}
+    )
+
+    # Add the last column of the rest of the tables to the final dataframe.
+    for column_name, filename in column_names_filenames[1:]:
+        dataframe = pandas.read_csv(filename, sep=arguments.field_separator)
+        if not (
+            final_dataframe.loc[:, "Compilation unit"].equals(
+                dataframe.loc[:, "Compilation unit"]
+            )
+        ):
+            print(
+                f"error: Compilation units of {filename} do not match that of previous files.",
+                file=sys.stderr,
+            )
+            return 1
+        final_dataframe.insert(
+            len(final_dataframe.columns),
+            column_name,
+            dataframe.loc[:, "Runtime or failure"],
+        )
 
     # NOTE(Brent): For now leave this call commented-out since it makes
     # assumptions about the input's column headers.
     # dataframe = add_total_passing(dataframe)
 
-    markdown = dataframe.to_markdown(index=False)
+    markdown = final_dataframe.to_markdown(index=False)
     if markdown is None:
         print("error: Could not convert input to Markdown", file=sys.stderr)
         return 1
