@@ -9,9 +9,11 @@ vast-front, in seconds, to run on the file; or the string literal FAIL if
 vast-front failed to process the file.
 """
 
-import pathlib
-import pandas
 import argparse
+import json
+import pandas
+import pathlib
+import sys
 from typing import Optional
 
 
