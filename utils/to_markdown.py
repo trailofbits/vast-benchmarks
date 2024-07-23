@@ -117,9 +117,7 @@ def main() -> int:
             dataframe.loc[:, "Runtime or failure"],
         )
 
-    # NOTE(Brent): For now leave this call commented-out since it makes
-    # assumptions about the input's column headers.
-    # dataframe = add_total_passing(dataframe)
+    final_dataframe = add_total_passing(final_dataframe)
 
     markdown = final_dataframe.to_markdown(index=False)
     if markdown is None:
