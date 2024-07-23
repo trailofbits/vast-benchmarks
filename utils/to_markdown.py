@@ -69,11 +69,14 @@ def add_total_passing(dataframe: pandas.DataFrame) -> pandas.DataFrame:
     Counts the number of rows with passing results and adds a row listing this
     number to the given dataframe.
     """
-    ...
-    passing = sum(dataframe["Runtime or failure"] != "FAIL")
-    total = dataframe.index.size
-    ratio = f"{passing}/{total}"
-    totals_row = pandas.DataFrame([["Total passing", ratio]], columns=dataframe.columns)
+
+    totals = ["Total passing"]
+    for i in range(1, len(dataframe.columns)):
+        passing = sum(dataframe.iloc[:, i] != "FAIL")
+        total = len(dataframe)
+        ratio = f"{passing}/{total}"
+        totals.append(ratio)
+    totals_row = pandas.DataFrame([totals], columns=dataframe.columns)
     # See https://stackoverflow.com/a/67678982/6824430
     return pandas.concat([totals_row, dataframe], ignore_index=True)
 
