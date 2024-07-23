@@ -49,7 +49,7 @@ The names of the files in the first column must match in all input files""".lstr
         "--output_filepath",
         "-o",
         type=pathlib.Path,
-        help="Output filepath (if omitted, result is printed to stderr).",
+        help="Output filepath (if omitted, result is printed to stdout).",
     )
     parser.add_argument(
         "-t",
