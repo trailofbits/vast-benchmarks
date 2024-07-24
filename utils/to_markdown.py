@@ -9,6 +9,9 @@ vast-front, in seconds, to run on the file; or the string literal FAIL if
 vast-front failed to process the file.
 """
 
+COMPILATION_UNIT_COLUMN_NAME = "Compilation unit"
+RUNTIME_OR_FAILURE_COLUMN_NAME = "Runtime or failure"
+
 import argparse
 import json
 import pandas
@@ -94,16 +97,17 @@ def main() -> int:
     final_dataframe = pandas.read_csv(
         column_names_filenames[0][1], sep=arguments.field_separator
     )
-    final_dataframe = final_dataframe.rename(
-        columns={"Runtime or failure": column_names_filenames[0][0]}
+    final_dataframe.rename(
+        columns={RUNTIME_OR_FAILURE_COLUMN_NAME: column_names_filenames[0][0]},
+        inplace=True,
     )
 
     # Add the last column of the rest of the tables to the final dataframe.
     for column_name, filename in column_names_filenames[1:]:
         dataframe = pandas.read_csv(filename, sep=arguments.field_separator)
         if not (
-            final_dataframe.loc[:, "Compilation unit"].equals(
-                dataframe.loc[:, "Compilation unit"]
+            final_dataframe.loc[:, COMPILATION_UNIT_COLUMN_NAME].equals(
+                dataframe.loc[:, COMPILATION_UNIT_COLUMN_NAME]
             )
         ):
             print(
@@ -114,7 +118,7 @@ def main() -> int:
         final_dataframe.insert(
             len(final_dataframe.columns),
             column_name,
-            dataframe.loc[:, "Runtime or failure"],
+            dataframe.loc[:, RUNTIME_OR_FAILURE_COLUMN_NAME],
         )
 
     final_dataframe = add_total_passing(final_dataframe)
