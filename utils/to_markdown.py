@@ -101,10 +101,12 @@ def main() -> int:
         columns={RUNTIME_OR_FAILURE_COLUMN_NAME: column_names_filenames[0][0]},
         inplace=True,
     )
+    final_dataframe.sort_values(by=COMPILATION_UNIT_COLUMN_NAME, inplace=True, ignore_index=True)
 
     # Add the last column of the rest of the tables to the final dataframe.
     for column_name, filename in column_names_filenames[1:]:
         dataframe = pandas.read_csv(filename, sep=arguments.field_separator)
+        dataframe.sort_values(by=COMPILATION_UNIT_COLUMN_NAME, inplace=True, ignore_index=True)
         if not (
             final_dataframe.loc[:, COMPILATION_UNIT_COLUMN_NAME].equals(
                 dataframe.loc[:, COMPILATION_UNIT_COLUMN_NAME]
