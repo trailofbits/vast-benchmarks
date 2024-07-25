@@ -257,9 +257,9 @@ def run_vast_on_compile_commands(
 
             fraction = f"{i}/{len(compile_commands)}"
             if not failed:
-                print(f"finished processing {fraction} files", sys.stderr)
+                print(f"finished processing {fraction} files", file=sys.stderr)
             else:
-                print(f"error processing {fraction} files", sys.stderr)
+                print(f"error processing {fraction} files", file=sys.stderr)
                 if print_errors:
                     print(elapsed_or_error, file=sys.stderr)
                 if output_directory is not None:
