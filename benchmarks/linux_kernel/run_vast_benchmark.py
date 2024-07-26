@@ -251,14 +251,17 @@ def run_vast_on_compile_commands(
             filepath = compile_command.file
             failed = isinstance(elapsed_or_error, str)
             num_passing += int(not failed)
-
-            row = [filepath, str(elapsed_or_error) if not failed else "FAIL"]
-            print_tsv_row(row)
-
+            row = [filepath]
             fraction = f"{i}/{len(compile_commands)}"
+
             if not failed:
+                seconds = elapsed_or_error.seconds
+                microseconds = str(elapsed_or_error.microseconds)[:2]
+                formatted_timedelta = f"{seconds}.{microseconds}"
+                row.append(formatted_timedelta)
                 print(f"finished processing {fraction} files", file=sys.stderr)
             else:
+                row.append("FAIL")
                 print(f"error processing {fraction} files", file=sys.stderr)
                 if print_errors:
                     print(elapsed_or_error, file=sys.stderr)
@@ -271,6 +274,8 @@ def run_vast_on_compile_commands(
                         log_filepath = log_filepath.with_name(log_name + "_")
                     with open(log_filepath, "w") as fp:
                         print(elapsed_or_error, file=fp)
+
+            print_tsv_row(row)
 
     return num_passing
 
