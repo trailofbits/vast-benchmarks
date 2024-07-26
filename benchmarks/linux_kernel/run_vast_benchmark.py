@@ -217,6 +217,7 @@ def run_vast_on_compile_commands(
     vast_path: pathlib.Path,
     vast_option: list[str],
     compile_commands: list[CompileCommand],
+    linux_directory: pathlib.Path,
     output_directory: Optional[pathlib.Path],
     num_processes: int,
     print_commands: bool,
@@ -248,7 +249,7 @@ def run_vast_on_compile_commands(
             enumerate(pool.imap(run_vast_on_compile_command, vast_benchmark_inputs), 1),
             compile_commands,
         ):
-            filepath = compile_command.file
+            filepath = "." + compile_command.file.removeprefix(str(linux_directory))
             failed = isinstance(elapsed_or_error, str)
             num_passing += int(not failed)
             row = [filepath]
@@ -286,6 +287,9 @@ def main() -> int:
     compile_commands_file = arguments.compile_commands_file.absolute()
     compile_commands = load_compile_commands(compile_commands_file)
 
+    # Get the path to the Linux directory so we can remove it from the output.
+    linux_directory = compile_commands_file.parent
+
     output_directory = arguments.output_directory
     if output_directory is not None:
         output_directory = output_directory.absolute()
@@ -294,6 +298,7 @@ def main() -> int:
         vast_path=pathlib.Path(arguments.vast_path),
         vast_option=arguments.vast_option,
         compile_commands=compile_commands,
+        linux_directory=linux_directory,
         output_directory=output_directory,
         num_processes=arguments.num_processes,
         print_commands=arguments.print_commands,
