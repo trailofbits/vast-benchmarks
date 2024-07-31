@@ -13,7 +13,6 @@ Download the following dependencies using your own package manager:
 
 - [GNU Make](https://www.gnu.org/software/make/)
 - [Clang/LLVM/LLD 18.1.8](https://github.com/llvm/llvm-project/releases/tag/llvmorg-18.1.8)
-- [Bear](https://github.com/rizsotto/Bear)
 - [Python3](https://www.python.org/downloads/)
 
 Download `VAST` from GitHub and follows its setup instructions:
@@ -35,18 +34,22 @@ cd linux/
 make defconfig
 ```
 
-1. Build the kernel and intercept its build system:
+1. Build the kernel:
 
 ```bash
 cd linux/
-bear -- make LLVM=1
+make LLVM=1
 ```
 
 Note that we use the `LLVM=1` flag to build the kernel with Clang-compatible
 arguments only and without any GCC-specific arguments.
 
-By this point the kernel should be built and a `compile_commands.json` file
-should exist in the kernel's top-level directory.
+1. Run the kernel's `gen_compile_commands.py` script to generate a compilation
+   database of the the kernel's source files:
+
+```sh
+python3 `scripts/clang-tools/gen_compile_commands.py`
+```
 
 ## Running VAST on Linux
 
