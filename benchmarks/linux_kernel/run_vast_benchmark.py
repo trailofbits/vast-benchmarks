@@ -104,7 +104,7 @@ class CompileCommand:
 
     directory: str
     file: str
-    output: str
+    output: Optional[str] = None
     arguments: Optional[list[str]] = None
     command: Optional[str] = None
 
