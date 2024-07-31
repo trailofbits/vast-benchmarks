@@ -23,33 +23,33 @@ Download `VAST` from GitHub and follows its setup instructions:
 
 1. Download the most recent version of the kernel:
 
-```bash
-git clone https://github.com/torvalds/linux.git --depth=1
-```
+    ```bash
+    git clone https://github.com/torvalds/linux.git --depth=1
+    ```
 
 1. Configure the kernel with its default configuration:
 
-```bash
-cd linux/
-make defconfig
-```
+    ```bash
+    cd linux/
+    make defconfig
+    ```
 
 1. Build the kernel:
 
-```bash
-cd linux/
-make LLVM=1
-```
+    ```bash
+    cd linux/
+    make LLVM=1
+    ```
 
-Note that we use the `LLVM=1` flag to build the kernel with Clang-compatible
-arguments only and without any GCC-specific arguments.
+    Note that we use the `LLVM=1` flag to build the kernel with Clang-compatible
+    arguments only and without any GCC-specific arguments.
 
 1. Run the kernel's `gen_compile_commands.py` script to generate a compilation
    database of the the kernel's source files:
 
-```sh
-python3 `scripts/clang-tools/gen_compile_commands.py`
-```
+    ```sh
+    python3 `scripts/clang-tools/gen_compile_commands.py`
+    ```
 
 ## Running VAST on Linux
 
