@@ -179,6 +179,15 @@ def run_vast_on_compile_command(
         arg.replace("(", "\\(").replace(")", "\\)") for arg in original_arguments
     ]
 
+    # Escape single quotes in command-line macro definitions like
+    # -DFOO='"string"', because for some reason subprocess.run() does not handle
+    # them correctly and break the macro definition.
+    for i, arg in enumerate(escaped_arguments):
+        if "='\"" in arg:
+            escaped = arg.replace("='\"", '="\\"')
+            escaped = escaped[:-2] + '\\""'
+            escaped_arguments[i] = escaped
+
     # If the -cc1 flag was passed, move it to the front of the arguments list.
     has_cc1 = "-cc1" in escaped_arguments
     if has_cc1:
