@@ -205,6 +205,7 @@ def run_vast_on_compile_command(
             del escaped_arguments[i]
             break
 
+    command = " ".join(
         [str(vast_path)]
         + (["-cc1"] if has_cc1 else [])
         + vast_option
@@ -219,14 +220,21 @@ def run_vast_on_compile_command(
         print(command, file=sys.stderr)
 
     begin = datetime.now()
-    cp = subprocess.run(command, shell=True, capture_output=True)
-    elapsed = datetime.now() - begin
-    failed = 0 != cp.returncode
+    with subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=compile_command.directory,
+    ) as process:
+        _, err = process.communicate()
+        elapsed = datetime.now() - begin
+        failed = 0 != process.returncode
 
-    if failed:
-        return cp.stderr.decode()
+        if failed:
+            return err.decode()
 
-    return elapsed
+        return elapsed
 
 
 def print_tsv_row(row: list[str]):
