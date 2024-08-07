@@ -214,7 +214,7 @@ def run_vast_on_compile_command(
             del escaped_arguments[i]
             break
 
-    command = " ".join(
+    command = (
         [str(vast_path)]
         + (["-cc1"] if has_cc1 else [])
         + vast_option
@@ -226,12 +226,11 @@ def run_vast_on_compile_command(
     )
 
     if print_commands:
-        print(command, file=sys.stderr)
+        print(" ".join(command), file=sys.stderr)
 
     begin = datetime.now()
     with subprocess.Popen(
         command,
-        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=compile_command.directory,
