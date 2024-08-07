@@ -315,6 +315,13 @@ def main() -> int:
     compile_commands_file = arguments.compile_commands_file.absolute()
     compile_commands = load_compile_commands(compile_commands_file)
 
+    # Filter the compile commands to only include .c files.
+    compile_commands = [
+        compile_command
+        for compile_command in compile_commands
+        if compile_command.file.endswith(".c")
+    ]
+
     # Get the path to the Linux directory so we can remove it from the output.
     linux_directory = compile_commands_file.parent
 
