@@ -162,7 +162,7 @@ def run_vast_on_compile_command(
     # Turn this back into a dataclass since astuple() works recursively.
     compile_command = CompileCommand(*compile_command)
 
-    input_filepath = pathlib.PurePath(os.path.abspath(compile_command.file))
+    input_filepath = pathlib.PurePath(compile_command.file)
     input_mlir_name = input_filepath.with_suffix(".mlir").name
 
     output_filepath = pathlib.Path()
