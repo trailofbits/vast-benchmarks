@@ -184,12 +184,32 @@ def run_vast_on_compile_command(
     if has_cc1:
         escaped_arguments.remove("-cc1")
 
-    command = f"cd {compile_command.directory} && " + " ".join(
+    # Remove the compiler name.
+    del escaped_arguments[0]
+
+    # Remove the input filename. The compile command's "file" property may be a
+    # full path, whereas the filename in the command may be a relative path, or
+    # vice versa, so to find the input filename we look for a file that ends
+    # with the same name component, which is the file's name plus its extension.
+    input_filename = pathlib.Path(compile_command.file).name
+    for i, arg in enumerate(escaped_arguments):
+        arg_filename = pathlib.Path(arg).name
+        if input_filename == arg_filename:
+            del escaped_arguments[i]
+            break
+
+    # Remove the output filename.
+    for i, arg in enumerate(escaped_arguments):
+        if arg == "-o":
+            del escaped_arguments[i]
+            del escaped_arguments[i]
+            break
+
         [str(vast_path)]
         + (["-cc1"] if has_cc1 else [])
         + vast_option
         # Skip compiler name, -o flag, and original output and input filenames.
-        + escaped_arguments[1:-3]
+        + escaped_arguments
         + ["-w", "-Wno-error", "-Wno-everything"]
         + [str(input_filepath)]
         + ["-o", str(output_filepath) if output_directory is not None else "/dev/null"]
